@@ -67,7 +67,6 @@ const validateStarRequest = (req) => {
        throw new Error("Fill in star parameters please");
     }
    
-    console.log(star);
    // string check
    if (typeof dec !== 'string' || typeof ra !== 'string' || typeof story !== 'string') {
        throw new Error("Star information must be of type string");
@@ -89,6 +88,7 @@ app.get('/block/:height', async (req, res) => {
     try {
         const height = req.params.height;
         const block = await blockchain.getBlock(height);
+        //console.log(block);
         res.send(block);
     } catch(err) {
         res.status(404).json({
@@ -105,7 +105,7 @@ app.get('/stars/address:address', async (req, res) => {
     try {
         const address = req.params.address.slice(1);
         const response = await blockchain.getBlockByAddress(address);
-        console.log(response);
+
         res.send(response);
     } catch(err) {
         res.status(404).json({
@@ -149,7 +149,7 @@ app.post('/block', async (req, res) => {
     } catch(err) {
         res.status(401).json({
             "status": 400,
-            "message": err.message
+            "message": "Block Error - " + err.message
         });
     }
 
@@ -160,10 +160,12 @@ app.post('/block', async (req, res) => {
     body.star.story = new Buffer(star.story).toString('hex');
 
 
-    const height = await blockchain.getChainHeight();
-    console.log(height);
+    let height = await blockchain.getChainHeight();
+
 
     await blockchain.addBlock(new Blck(body));
+
+    height = await blockchain.getChainHeight();
     const response = await blockchain.getBlock(height);
 
     starValidation.remove(address);

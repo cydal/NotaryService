@@ -7,12 +7,17 @@ const bitcoinMessage = require("bitcoinjs-message");
 
 const VALIDATION_WINDOW = 300;
 
-
+/**
+ * Star class to handle star functions
+ */
 class Star {
     constructor() {
         //this.req = req;
     }
 
+    /**
+     *  Check address request
+     */
     async checkAddressRequest(address) {
         return new Promise((resolve, reject) => {
             db.get(address, (err, value) => {
@@ -42,7 +47,9 @@ class Star {
             });
         });
     }
-
+    /**
+     *  Save address Request
+     */
     async saveAddressRequest(address) {
         return new Promise((resolve, reject) => {
             const response = {
@@ -59,6 +66,9 @@ class Star {
         });
     }
 
+    /**
+     *  Validate message signature
+     */
     async validateMessageSignature(address, signature) {
         return new Promise((resolve, reject) => {
             db.get(address, (err, value) => {
@@ -112,9 +122,13 @@ class Star {
         });
     }
 
+    /**
+     *  Check address on system
+     */
     async isValid(req) {
         return new Promise((resolve, reject) => {
             db.get(req.body.address, (err, value) => {
+                
                 if (value === undefined) {
                     return reject(new Error("Address not authorized"));
                 } else if (err) {
@@ -128,6 +142,9 @@ class Star {
         });
     }
 
+    /**
+     *  Remove Address
+     */
     remove(address) {
         db.del(address);
     }

@@ -56,7 +56,9 @@ class Blockchain {
     // previous block hash
     if(newBlock.height>0){
       const prevBlock = await utils.getBlock(newBlock.height - 1);
-      newBlock.previousBlockHash = JSON.parse(prevBlock).hash;
+      console.log(typeof prevBlock);
+      console.log(prevBlock);
+      newBlock.previousBlockHash = prevBlock.hash;
 
     }
     // Block hash with SHA256 using newBlock and converting to a string
@@ -79,7 +81,7 @@ class Blockchain {
     async getBlock(blockHeight){
       // return object as a single string
       let block = await utils.getBlock(blockHeight);
-      return JSON.parse(block);
+      return block;
     }
 
     // get block by address
