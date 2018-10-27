@@ -2,9 +2,9 @@
 const Blockchain = require('./simpleChain.js').Blockchain;
 let Blck = require('./simpleChain.js').Block;
 
-const Star = require("./Star");
-
+const Star = require("./Star.js").Star;
 const express = require('express');
+
 const app = express();
 const port = 8000;
 
@@ -12,6 +12,10 @@ const bodyParser = require('body-parser');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+
+// Max bytes for story
+const MAX_STORY = 500;
 
 
 app.listen(port, () => {
@@ -30,6 +34,55 @@ let mockChain = {
 
 let blockchain = new Blockchain();
 
+const validateAddress = (req) => {
+
+    if (!req.body.address) {
+        //if body empty or no body - 400 Bad Request
+        res.status(400).json({
+            "status": 400,
+            "message": "Must contain address parameter"
+        });
+     }
+};
+
+
+const validateSignature = (req) => {
+    
+    if (!req.body.signature) {
+        //if body empty or no body - 400 Bad Request
+        res.status(400).json({
+            "status": 400,
+            "message": "Must contain signature parameter"
+        });
+     }
+};
+
+const validateStarRequest = (req) => {
+    const { star } = req.body;
+    const {dec, ra, story } = star;
+   
+    validateAddress(req);
+   
+    if (!req.body.star) {
+       throw new Error("Fill in star parameters please");
+    }
+   
+    console.log(star);
+   // string check
+   if (typeof dec !== 'string' || typeof ra !== 'string' || typeof story !== 'string') {
+       throw new Error("Star information must be of type string");
+   }
+   
+   // not-empty check
+   if ( !dec.length || !ra.length || !story.length) {
+       throw new Error("Star information must not be empty");
+   }
+
+   //ascii check
+   if (!/^[\x00-\x7F]*$/.test(story)) {
+       throw new Error("Story must only contain ASCII ccharaters");
+   }
+}
 
 app.get('/block/:height', async (req, res) => {
     
@@ -47,22 +100,73 @@ app.get('/block/:height', async (req, res) => {
     //res.send(JSON.stringify(mockChain[0]));
 });
 
+app.get('/stars/address:address', async (req, res) => {
+    
+    try {
+        const address = req.params.address.slice(1);
+        const response = await blockchain.getBlockByAddress(address);
+        console.log(response);
+        res.send(response);
+    } catch(err) {
+        res.status(404).json({
+            "status": 404,
+            "message": err.message + " -  Address not found"
+        });
+    }
+    //res.send(req.url);
+    //res.send(JSON.stringify(mockChain[0]));
+});
+
+app.get('/stars/hash:hash', async (req, res) => {
+    
+    try {
+        const hash = req.params.hash.slice(1);
+        const block = await blockchain.getBlockByHash(hash);
+        res.send(block);
+    } catch(err) {
+        res.status(404).json({
+            "status": 404,
+            "message": "Hash not found"
+        });
+    }
+    //res.send(req.url);
+    //res.send(JSON.stringify(mockChain[0]));
+});
+
 
 app.post('/block', async (req, res) => {
 
-    if (req.body.body === '' || req.body.body === undefined) {
-       //if body empty or no body - 400 Bad Request
-       res.status(400).json({
-           "status": 400,
-           "message": "Must contain content"
-       });
+    validateStarRequest(req);
+
+    const starValidation = new Star();
+
+    try {
+
+        if (await !starValidation.isValid(req)) {
+            throw new Error("Signature is invalid");
+        }
+
+    } catch(err) {
+        res.status(401).json({
+            "status": 400,
+            "message": err.message
+        });
     }
+
+
+    const body = req.body;
+    const { address, star } = req.body ;
+
+    body.star.story = new Buffer(star.story).toString('hex');
 
 
     const height = await blockchain.getChainHeight();
     console.log(height);
-    await blockchain.addBlock(new Blck(req.body.body));
+
+    await blockchain.addBlock(new Blck(body));
     const response = await blockchain.getBlock(height);
+
+    starValidation.remove(address);
 
     res.send(response);
 
@@ -73,20 +177,15 @@ app.post('/block', async (req, res) => {
 
 app.post('/requestValidation', async (req, res) => {
 
-    if (!req.body.address) {
-       //if body empty or no body - 400 Bad Request
-       res.status(400).json({
-           "status": 400,
-           "message": "Must contain address parameter"
-       });
-    }
+    validateAddress(req);
 
     const address = req.body.address;
+    const starValidation = new Star();
 
     try {
-        response = await Star.pendingAddressRequest(address);
+        response = await starValidation.checkAddressRequest(address);
     } catch (err) {
-        response = await Star.saveAddressRequest(address);
+        response = await starValidation.saveAddressRequest(address);
     }
 
     res.send(response);
@@ -94,3 +193,29 @@ app.post('/requestValidation', async (req, res) => {
     //console.log(JSON.stringify(response));
     //res.send(JSON.stringify(response));
 });
+
+
+
+app.post('/message-signature/validate', async (req, res) => {
+
+    validateAddress(req);
+    validateSignature(req);
+
+    const starValidation = new Star();
+
+    try {
+        const {address, signature } = req.body;
+        const response = await starValidation.validateMessageSignature(address, signature);
+
+        response.registerStar ? res.send(response) : res.status(401).json(response);
+
+    } catch (err) {
+            res.status(404).json({
+           "status": 404,
+           "message": err.message
+       });
+    }
+
+    //console.log(JSON.stringify(response));
+    //res.send(JSON.stringify(response));
+})

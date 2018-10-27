@@ -3,7 +3,7 @@
 |  =============================================================*/
 
 const level = require('level');
-const chainDB = './chaindata';
+const chainDB = './data/chaindata';
 const db = level(chainDB);
 
 
@@ -69,9 +69,76 @@ function getHeight() {
 }
 
 
+// get chain height
+function getByAddress(address) {
+
+    let blocks = [];
+    let block;
+
+    return new Promise((resolve, reject) => {
+        
+        db.createReadStream().on('data', function(data) {
+            block = JSON.parse(data.value);
+            if (block.body.address === address) {
+               blocks.push(block);
+            }
+            //console.log(data.value);
+        }).on('error', function(err) {
+            reject(err);
+        }).on('close', function() {
+            resolve(blocks);
+        });
+    });
+}
+
+
+// get chain height
+function getByHash(hash) {
+
+    let blocks = [];
+    let block;
+
+    console.log(hash);
+
+    return new Promise((resolve, reject) => {
+        
+        db.createReadStream().on('data', function(data) {
+            block = JSON.parse(data.value);
+            if (block.hash === hash) {
+               blocks.push(block);
+            }
+            //console.log(data.value);
+        }).on('error', function(err) {
+            reject(err);
+        }).on('close', function() {
+            resolve(blocks);
+        });
+    });
+}
+
+
+
+// get chain height
+function getHeight() {
+    return new Promise((resolve, reject) => {
+        let i = -1;
+        db.createReadStream().on('data', function(data) {
+            i++;
+            //console.log(data.value);
+        }).on('error', function(err) {
+            reject(err);
+        }).on('close', function() {
+            resolve(i);
+        });
+    });
+}
+
+
 module.exports = {
     "addBlock": pushBlock, 
     "getBlock": getBlock, 
     "getChain": getChain, 
-    "getHeight": getHeight
+    "getHeight": getHeight,
+    "getByAddress": getByAddress,
+    "getByHash": getByHash
 };

@@ -75,11 +75,26 @@ class Blockchain {
       return await utils.getHeight();
     }
 
-    // get block
+    // get block by height
     async getBlock(blockHeight){
       // return object as a single string
       let block = await utils.getBlock(blockHeight);
       return JSON.parse(block);
+    }
+
+    // get block by address
+    async getBlockByAddress(address) {
+      // return object as a single string
+      const block = await utils.getByAddress(address);
+      return block;
+    }
+
+
+    // get block by hash
+    async getBlockByHash(hash) {
+      // return object as a single string
+      let block = await utils.getByHash(hash);
+      return block;
     }
 
     async getChain() {
@@ -128,6 +143,8 @@ class Blockchain {
       }
     }
 }
+
+
 
 module.exports = {"Blockchain": Blockchain, "Block": Block};
 
