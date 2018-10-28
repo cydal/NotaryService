@@ -115,7 +115,11 @@ function getByHash(hash) {
         
         db.createReadStream().on('data', function(data) {
             block = JSON.parse(data.value);
-            block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
+
+            if (parseInt(data.key) > 0) { 
+                block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
+            }
+            
             if (block.hash === hash) {
                blocks.push(block);
             }

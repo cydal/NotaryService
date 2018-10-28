@@ -1,4 +1,3 @@
-
 const Blockchain = require('./simpleChain.js').Blockchain;
 let Blck = require('./simpleChain.js').Block;
 
@@ -139,10 +138,11 @@ app.post('/block', async (req, res) => {
     validateStarRequest(req);
 
     const starValidation = new Star();
+    
 
     try {
-
-        if (await !starValidation.isValid(req)) {
+        const valid = await starValidation.isValid(req);
+        if (!valid) {
             throw new Error("Signature is invalid");
         }
 
@@ -151,6 +151,8 @@ app.post('/block', async (req, res) => {
             "status": 400,
             "message": "Block Error - " + err.message
         });
+
+        return
     }
 
 

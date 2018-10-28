@@ -1,6 +1,7 @@
 
 
 
+
 const utils = require('./levelUtils');
 
 
@@ -56,8 +57,7 @@ class Blockchain {
     // previous block hash
     if(newBlock.height>0){
       const prevBlock = await utils.getBlock(newBlock.height - 1);
-      console.log(typeof prevBlock);
-      console.log(prevBlock);
+
       newBlock.previousBlockHash = prevBlock.hash;
 
     }
@@ -152,16 +152,10 @@ module.exports = {"Blockchain": Blockchain, "Block": Block};
 
 /** 
 let blockchain = new Blockchain();
-
-
-
 for (let i = 0; i < 10; i++) {
   blockchain.addBlock(new Block("New Block " + i));
 }
-
 setTimeout(function() {
   blockchain.validateChain();
 }, 1000)
-
-
 */

@@ -1,5 +1,3 @@
-//import { DEFAULT_ECDH_CURVE } from 'tls';
-
 const level = require('level');
 const chainDB = './data/star';
 const db = level(chainDB);
@@ -136,7 +134,6 @@ class Star {
                 }
 
                 value = JSON.parse(value);
-
                 return value.messageSignature === 'valid';
             })
         });
