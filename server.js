@@ -33,7 +33,7 @@ let mockChain = {
 
 let blockchain = new Blockchain();
 
-const validateAddress = (req) => {
+const validateAddress = (req, res) => {
 
     if (!req.body.address) {
         //if body empty or no body - 400 Bad Request
@@ -45,7 +45,7 @@ const validateAddress = (req) => {
 };
 
 
-const validateSignature = (req) => {
+const validateSignature = (req, res) => {
     
     if (!req.body.signature) {
         //if body empty or no body - 400 Bad Request
@@ -56,11 +56,11 @@ const validateSignature = (req) => {
      }
 };
 
-const validateStarRequest = (req) => {
+const validateStarRequest = (req, res) => {
     const { star } = req.body;
     const {dec, ra, story } = star;
    
-    validateAddress(req);
+    validateAddress(req, res);
    
     if (!req.body.star) {
        throw new Error("Fill in star parameters please");
@@ -135,7 +135,7 @@ app.get('/stars/hash:hash', async (req, res) => {
 
 app.post('/block', async (req, res) => {
 
-    validateStarRequest(req);
+    validateStarRequest(req, res);
 
     const starValidation = new Star();
     
@@ -147,32 +147,41 @@ app.post('/block', async (req, res) => {
         }
 
     } catch(err) {
-        res.status(401).json({
-            "status": 400,
-            "message": "Block Error - " + err.message
-        });
+            throw new Error(err.message);
+            //res.status(401).json({
+              //  "status": 400,
+                //"message": "Block Error - " + err.message
+            //});
 
         return
     }
 
 
-    const body = req.body;
-    const { address, star } = req.body ;
+    try {
+        const body = req.body;
+        const { address, star } = req.body ;
+    
+        body.star.story = new Buffer(star.story).toString('hex');
+    
+    
+        let height = await blockchain.getChainHeight();
+    
+    
+        await blockchain.addBlock(new Blck(body));
+    
+        height = await blockchain.getChainHeight();
+        const response = await blockchain.getBlock(height);
+    
+        starValidation.remove(address);
+    
+        res.send(response);
 
-    body.star.story = new Buffer(star.story).toString('hex');
-
-
-    let height = await blockchain.getChainHeight();
-
-
-    await blockchain.addBlock(new Blck(body));
-
-    height = await blockchain.getChainHeight();
-    const response = await blockchain.getBlock(height);
-
-    starValidation.remove(address);
-
-    res.send(response);
+    } catch(err) {
+        res.status(404).json({
+            "status": 404,
+            "message": err.message + " Headers"
+        });
+    }
 
     //console.log(JSON.stringify(response));
     //res.send(JSON.stringify(response));
@@ -181,7 +190,7 @@ app.post('/block', async (req, res) => {
 
 app.post('/requestValidation', async (req, res) => {
 
-    validateAddress(req);
+    validateAddress(req, res);
 
     const address = req.body.address;
     const starValidation = new Star();
@@ -202,8 +211,8 @@ app.post('/requestValidation', async (req, res) => {
 
 app.post('/message-signature/validate', async (req, res) => {
 
-    validateAddress(req);
-    validateSignature(req);
+    validateAddress(req), res;
+    validateSignature(req, res);
 
     const starValidation = new Star();
 
