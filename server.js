@@ -147,11 +147,10 @@ app.post('/block', async (req, res) => {
         }
 
     } catch(err) {
-            throw new Error(err.message);
-            //res.status(401).json({
-              //  "status": 400,
-                //"message": "Block Error - " + err.message
-            //});
+            res.status(401).json({
+                "status": 400,
+                "message": "Block Error - " + err.message
+            });
 
         return
     }
